@@ -5,7 +5,6 @@ import pl.marcelgiercarz.elevatorsystemapi.domain.Elevator;
 import pl.marcelgiercarz.elevatorsystemapi.domain.ElevatorCall;
 import pl.marcelgiercarz.elevatorsystemapi.domain.enums.Direction;
 import pl.marcelgiercarz.elevatorsystemapi.domain.enums.ElevatorStatus;
-import pl.marcelgiercarz.elevatorsystemapi.repository.ElevatorCallRepository;
 import pl.marcelgiercarz.elevatorsystemapi.repository.ElevatorRepository;
 
 import java.util.Comparator;
@@ -17,11 +16,9 @@ import static java.lang.Math.abs;
 @Service
 public class ElevatorDispatcher {
     private final ElevatorRepository elevatorRepository;
-    private final ElevatorCallRepository elevatorCallRepository;
 
-    public ElevatorDispatcher(ElevatorRepository elevatorRepository, ElevatorCallRepository elevatorCallRepository){
+    public ElevatorDispatcher(ElevatorRepository elevatorRepository){
         this.elevatorRepository = elevatorRepository;
-        this.elevatorCallRepository = elevatorCallRepository;
     }
 
     public Elevator dispatch(ElevatorCall call){
@@ -31,7 +28,6 @@ public class ElevatorDispatcher {
                 .filter(elevator -> isOnSamePath(elevator, call))
                 .findFirst();
         if (onRouteElevator.isPresent()){
-            addCallToQueue(onRouteElevator.get(), call);
             return onRouteElevator.get();
         }
 
@@ -39,15 +35,12 @@ public class ElevatorDispatcher {
                 .filter(elevator -> elevator.getStatus() == ElevatorStatus.IDLE)
                 .min(Comparator.comparingInt(elevator -> abs(elevator.getCurrentFloor() - call.getFloor())));
         if (closestIdleElevator.isPresent()){
-            addCallToQueue(closestIdleElevator.get(), call);
             return closestIdleElevator.get();
         }
 
         Optional<Elevator> leastBusyElevator = elevators.stream()
                 .min(Comparator.comparingInt(elevator -> elevator.getStopsQueue().size()));
-        Elevator leastBusy = leastBusyElevator.orElseThrow(() -> new IllegalStateException("Brak dostępnych wind"));
-        addCallToQueue(leastBusy, call);
-        return leastBusy;
+        return leastBusyElevator.orElseThrow(() -> new IllegalStateException("Brak dostępnych wind"));
     }
 
     private boolean isOnSamePath(Elevator elevator, ElevatorCall call){
@@ -56,11 +49,4 @@ public class ElevatorDispatcher {
                 || elevator.getDirection() == Direction.UP && call.getFloor() > elevator.getCurrentFloor());
     }
 
-    private void addCallToQueue(Elevator elevator, ElevatorCall call){
-        elevator.getStopsQueue().add(call.getFloor());
-        elevatorRepository.save(elevator);
-
-        call.setAssignedElevator(elevator);
-        elevatorCallRepository.save(call);
-    }
 }

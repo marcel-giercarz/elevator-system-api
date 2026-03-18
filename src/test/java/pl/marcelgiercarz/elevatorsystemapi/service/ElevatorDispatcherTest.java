@@ -10,7 +10,6 @@ import pl.marcelgiercarz.elevatorsystemapi.domain.Elevator;
 import pl.marcelgiercarz.elevatorsystemapi.domain.ElevatorCall;
 import pl.marcelgiercarz.elevatorsystemapi.domain.enums.Direction;
 import pl.marcelgiercarz.elevatorsystemapi.domain.enums.ElevatorStatus;
-import pl.marcelgiercarz.elevatorsystemapi.repository.ElevatorCallRepository;
 import pl.marcelgiercarz.elevatorsystemapi.repository.ElevatorRepository;
 
 import java.util.ArrayList;
@@ -27,8 +26,6 @@ public class ElevatorDispatcherTest {
     private ElevatorDispatcher dispatcher;
     @Mock
     private ElevatorRepository elevatorRepository;
-    @Mock
-    private ElevatorCallRepository elevatorCallRepository;
 
     @Test
     @DisplayName("It should assign elevator moving in the same direction")
@@ -45,29 +42,9 @@ public class ElevatorDispatcherTest {
 
         when(elevatorRepository.findAll()).thenReturn(List.of(elevator));
 
-        Elevator dispatch = dispatcher.dispatch(elevatorCall);
+        Elevator dispatchedElevator = dispatcher.dispatch(elevatorCall);
 
-        assertThat(dispatch).isEqualTo(elevator);
-    }
-
-    @Test
-    @DisplayName("It should add call floor to assigned elevator stops queue")
-    void shouldAddFloorToStopsQueueAfterDispatch(){
-        Elevator elevator = new Elevator();
-        elevator.setCurrentFloor(5);
-        elevator.setStatus(ElevatorStatus.MOVING);
-        elevator.setStopsQueue(new ArrayList<>());
-        elevator.setDirection(Direction.DOWN);
-
-        ElevatorCall elevatorCall = new ElevatorCall();
-        elevatorCall.setFloor(3);
-        elevatorCall.setDirection(Direction.DOWN);
-
-        when(elevatorRepository.findAll()).thenReturn(List.of(elevator));
-
-        Elevator dispatch = dispatcher.dispatch(elevatorCall);
-
-        assertThat(dispatch.getStopsQueue()).contains(3);
+        assertThat(dispatchedElevator).isEqualTo(elevator);
     }
 
     @Test
@@ -91,9 +68,9 @@ public class ElevatorDispatcherTest {
 
         when(elevatorRepository.findAll()).thenReturn(List.of(elevator1, elevator2));
 
-        Elevator dispatch = dispatcher.dispatch(elevatorCall);
+        Elevator dispatchedElevator = dispatcher.dispatch(elevatorCall);
 
-        assertThat(dispatch).isEqualTo(elevator2);
+        assertThat(dispatchedElevator).isEqualTo(elevator2);
     }
 
     @Test
@@ -117,12 +94,13 @@ public class ElevatorDispatcherTest {
 
         when(elevatorRepository.findAll()).thenReturn(List.of(elevator1, elevator2));
 
-        Elevator dispatch = dispatcher.dispatch(elevatorCall);
+        Elevator dispatchedElevator = dispatcher.dispatch(elevatorCall);
 
-        assertThat(dispatch).isEqualTo(elevator1);
+        assertThat(dispatchedElevator).isEqualTo(elevator1);
 
     }
 
+    @DisplayName("If elevator is moving in opposite direction, it should assign different elevator")
     @Test
     void shouldNotAssignElevatorMovingInOppositeDirection(){
         Elevator elevator1 = new Elevator();
@@ -143,12 +121,13 @@ public class ElevatorDispatcherTest {
 
         when(elevatorRepository.findAll()).thenReturn(List.of(elevator1, elevator2));
 
-        Elevator dispatch = dispatcher.dispatch(elevatorCall);
+        Elevator dispatchedElevator = dispatcher.dispatch(elevatorCall);
 
-        assertThat(dispatch).isEqualTo(elevator2);
+        assertThat(dispatchedElevator).isEqualTo(elevator2);
 
     }
 
+    @DisplayName("If there are no elevators available, it should throw IllegalStateException")
     @Test
     void shouldThrowExceptionWhenNoElevatorsAvailable(){
         ElevatorCall elevatorCall = new ElevatorCall();
@@ -159,28 +138,4 @@ public class ElevatorDispatcherTest {
 
         assertThatThrownBy(() -> dispatcher.dispatch(elevatorCall)).isInstanceOf(IllegalStateException.class);
     }
-
-    @Test
-    void shouldSetAssignedElevatorOnCallAfterDispatch(){
-        Elevator elevator = new Elevator();
-        elevator.setCurrentFloor(5);
-        elevator.setStatus(ElevatorStatus.MOVING);
-        elevator.setStopsQueue(new ArrayList<>());
-        elevator.setDirection(Direction.DOWN);
-
-        ElevatorCall elevatorCall = new ElevatorCall();
-        elevatorCall.setFloor(3);
-        elevatorCall.setDirection(Direction.DOWN);
-
-        when(elevatorRepository.findAll()).thenReturn(List.of(elevator));
-
-        dispatcher.dispatch(elevatorCall);
-
-        assertThat(elevatorCall.getAssignedElevator()).isEqualTo(elevator);
-    }
-
-
-
-
-
 }

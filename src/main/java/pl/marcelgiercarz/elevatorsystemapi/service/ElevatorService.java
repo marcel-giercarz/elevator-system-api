@@ -55,12 +55,15 @@ public class ElevatorService {
         elevatorCall.setDirection(direction);
         elevatorCall.setFloor(floor);
         elevatorCall.setStatus(CallStatus.PENDING);
-        elevatorCallRepository.save(elevatorCall);
 
         Elevator assignedElevator = elevatorDispatcher.dispatch(elevatorCall);
-        sortFloorsQueue(assignedElevator);
-        elevatorRepository.save(assignedElevator);
 
+        elevatorCall.setAssignedElevator(assignedElevator);
+        assignedElevator.getStopsQueue().add(floor);
+
+        sortFloorsQueue(assignedElevator);
+
+        elevatorRepository.save(assignedElevator);
         return elevatorCallRepository.save(elevatorCall);
     }
 
