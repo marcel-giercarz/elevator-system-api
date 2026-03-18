@@ -2,6 +2,7 @@ package pl.marcelgiercarz.elevatorsystemapi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.marcelgiercarz.elevatorsystemapi.domain.Elevator;
@@ -20,31 +21,28 @@ public class ElevatorController {
     private final ElevatorService elevatorService;
 
     @GetMapping
-    public List<Elevator> getAllElevators(){
-        return elevatorService.getAllElevators();
+    public ResponseEntity<List<Elevator>> getAllElevators(){
+        return ResponseEntity.ok(elevatorService.getAllElevators());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Elevator> getElevatorById(@PathVariable Long id){
-        return elevatorService.getElevatorById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(elevatorService.getElevatorById(id));
     }
 
-
     @PostMapping
-    public Elevator addElevator(){
-        return elevatorService.addElevator();
+    public ResponseEntity<Elevator> addElevator(){
+        return ResponseEntity.status(HttpStatus.CREATED).body(elevatorService.addElevator());
     }
 
     @PostMapping("/call")
-    public ElevatorCall callElevator(@Valid @RequestBody ElevatorCallRequest elevatorCallRequest){
-        return elevatorService.callElevator(elevatorCallRequest.getFloor(), elevatorCallRequest.getDirection());
+    public ResponseEntity<ElevatorCall> callElevator(@Valid @RequestBody ElevatorCallRequest elevatorCallRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(elevatorService.callElevator(elevatorCallRequest.getFloor(), elevatorCallRequest.getDirection()));
     }
 
     @GetMapping("/calls")
-    public List<ElevatorCall> getAllElevatorCalls(){
-        return elevatorService.getAllElevatorCalls();
+    public ResponseEntity<List<ElevatorCall>> getAllElevatorCalls(){
+        return ResponseEntity.ok(elevatorService.getAllElevatorCalls());
     }
 
     @PostMapping("/floor-request")
@@ -53,7 +51,7 @@ public class ElevatorController {
     }
 
     @PostMapping("/step")
-    public List<Elevator> simulateStep(){
-        return elevatorService.simulateStepForAllElevators();
+    public ResponseEntity<List<Elevator>> simulateStep(){
+        return ResponseEntity.ok(elevatorService.simulateStepForAllElevators());
     }
 }

@@ -13,7 +13,6 @@ import pl.marcelgiercarz.elevatorsystemapi.repository.ElevatorRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
@@ -36,8 +35,9 @@ public class ElevatorService {
         return elevatorRepository.findAll();
     }
 
-    public Optional<Elevator> getElevatorById(Long id){
-        return elevatorRepository.findById(id);
+    public Elevator getElevatorById(Long id){
+        return elevatorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Elevator not found: " + id));
     }
 
     public Elevator addElevator(){
