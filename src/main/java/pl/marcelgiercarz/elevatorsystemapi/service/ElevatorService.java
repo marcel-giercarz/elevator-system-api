@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
-//@RequiredArgsConstructor
 public class ElevatorService {
 
     private final ElevatorRepository elevatorRepository;
@@ -51,16 +50,18 @@ public class ElevatorService {
 
     public ElevatorCall callElevator(int floor, Direction direction){
         ElevatorCall elevatorCall = new ElevatorCall();
-
         elevatorCall.setDirection(direction);
         elevatorCall.setFloor(floor);
         elevatorCall.setStatus(CallStatus.PENDING);
 
         Elevator assignedElevator = elevatorDispatcher.dispatch(elevatorCall);
-
         elevatorCall.setAssignedElevator(assignedElevator);
-        assignedElevator.getStopsQueue().add(floor);
 
+        if (assignedElevator.getCurrentFloor() == floor){
+            return elevatorCallRepository.save(elevatorCall);
+        }
+
+        assignedElevator.getStopsQueue().add(floor);
         sortFloorsQueue(assignedElevator);
 
         elevatorRepository.save(assignedElevator);
@@ -76,7 +77,17 @@ public class ElevatorService {
                 .findElevatorCallByAssignedElevator_IdAndFloorAndStatus(elevatorId, currentFloor, CallStatus.PENDING)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Elevator call not found, Elevator ID: %d, Current floor: %d, Call status: %s", elevatorId, currentFloor, CallStatus.PENDING)));
 
+        if (currentFloor == targetFloor){
+            elevatorCall.setTargetFloor(targetFloor);
+            elevatorCall.setStatus(CallStatus.COMPLETED);
+            elevatorCallRepository.save(elevatorCall);
+
+            return elevator;
+        }
+
         elevator.getStopsQueue().add(targetFloor);
+        sortFloorsQueue(elevator);
+
         elevatorCall.setStatus(CallStatus.IN_PROGRESS);
         elevatorCall.setTargetFloor(targetFloor);
 
@@ -109,7 +120,7 @@ public class ElevatorService {
 
     private void handleArrival(Elevator elevator, int targetFloor){
         if (elevator.getCurrentFloor() == targetFloor){
-            elevatorCallRepository.findByTargetFloorAndStatus(targetFloor, CallStatus.IN_PROGRESS)
+            elevatorCallRepository.findByTargetFloorAndStatusAndAssignedElevator(targetFloor, CallStatus.IN_PROGRESS, elevator)
                     .forEach(call -> {
                         call.setStatus(CallStatus.COMPLETED);
                         elevatorCallRepository.save(call);

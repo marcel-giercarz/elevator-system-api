@@ -14,5 +14,5 @@ public interface ElevatorCallRepository extends JpaRepository<ElevatorCall, Long
 
     Optional<ElevatorCall> findElevatorCallByAssignedElevator_IdAndFloorAndStatus(Long elevatorId, int floor, CallStatus status);
 
-    List<ElevatorCall> findByTargetFloorAndStatus(Integer targetFloor, CallStatus status);
+    List<ElevatorCall> findByTargetFloorAndStatusAndAssignedElevator(Integer targetFloor, CallStatus status, Elevator elevator);
 }
